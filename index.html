@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline';">
+    <meta name="description" content="Strumento educativo per l'analisi dermoscopica di lesioni cutanee pigmentate">
     <title>Analisi Dermoscopica</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -10,16 +12,24 @@
     <div class="container">
         <header>
             <h1>Analisi Dermoscopica di Lesioni Cutanee</h1>
-            <p class="disclaimer">ATTENZIONE: Questo strumento è solo a scopo educativo. 
-            Non sostituisce una diagnosi medica professionale. Consultare sempre un dermatologo qualificato.</p>
+            <div class="disclaimer">
+                <p><strong>ATTENZIONE MEDICA:</strong> Questo strumento è esclusivamente a scopo educativo. 
+                Non sostituisce una diagnosi medica professionale. Consultare sempre un dermatologo qualificato.</p>
+                <p>Le lesioni cutanee sospette richiedono sempre una valutazione clinica diretta.</p>
+            </div>
         </header>
 
         <main>
             <section class="upload-section">
                 <h2>Carica l'immagine della lesione</h2>
                 <div class="upload-container">
-                    <input type="file" id="imageUpload" accept="image/*">
+                    <input type="file" id="imageUpload" accept="image/jpeg, image/png, image/webp" capture="environment">
                     <label for="imageUpload" class="upload-button">Seleziona immagine</label>
+                    <p class="upload-info">Formati supportati: JPG, PNG, WebP (max 10MB)</p>
+                </div>
+                <div id="loadingIndicator" class="loading-indicator hidden">
+                    <div class="spinner"></div>
+                    <p>Elaborazione in corso...</p>
                 </div>
             </section>
 
@@ -27,127 +37,326 @@
                 <div class="image-container">
                     <div class="original-image">
                         <h3>Immagine originale</h3>
-                        <div id="originalImageContainer">
-                            <p class="placeholder-text">L'immagine apparirà qui</p>
+                        <div class="image-viewer">
+                            <div id="originalImageContainer" class="image-container">
+                                <p class="placeholder-text">L'immagine apparirà qui</p>
+                            </div>
+                            <div class="zoom-controls">
+                                <button id="zoomInOriginal" class="zoom-btn" title="Ingrandisci">+</button>
+                                <button id="zoomOutOriginal" class="zoom-btn" title="Riduci">-</button>
+                                <button id="resetZoomOriginal" class="zoom-btn" title="Ripristina">↺</button>
+                            </div>
+                        </div>
+                        <div class="measurement-tool">
+                            <label for="toggleMeasure" class="measure-label">
+                                <input type="checkbox" id="toggleMeasure"> Attiva strumento di misurazione
+                            </label>
+                            <div id="measureInfo" class="measure-info hidden">Dimensione: <span id="measureValue">0.0</span> mm</div>
                         </div>
                     </div>
                     <div class="processed-image">
                         <h3>Immagine elaborata</h3>
-                        <div id="processedImageContainer">
-                            <p class="placeholder-text">L'immagine elaborata apparirà qui</p>
+                        <div class="image-viewer">
+                            <div id="processedImageContainer" class="image-container">
+                                <p class="placeholder-text">L'immagine elaborata apparirà qui</p>
+                            </div>
+                            <div class="zoom-controls">
+                                <button id="zoomInProcessed" class="zoom-btn" title="Ingrandisci">+</button>
+                                <button id="zoomOutProcessed" class="zoom-btn" title="Riduci">-</button>
+                                <button id="resetZoomProcessed" class="zoom-btn" title="Ripristina">↺</button>
+                            </div>
                         </div>
                         <div class="filter-controls">
-                            <div class="filter-control">
-                                <label for="contrastSlider">Contrasto:</label>
-                                <input type="range" id="contrastSlider" min="0" max="200" value="100">
+                            <div class="filter-tabs">
+                                <button class="filter-tab active" data-tab="basic">Base</button>
+                                <button class="filter-tab" data-tab="advanced">Avanzati</button>
                             </div>
-                            <div class="filter-control">
-                                <label for="brightnessSlider">Luminosità:</label>
-                                <input type="range" id="brightnessSlider" min="0" max="200" value="100">
+                            <div id="basicFilters" class="filter-panel active">
+                                <div class="filter-control">
+                                    <label for="contrastSlider">Contrasto:</label>
+                                    <input type="range" id="contrastSlider" min="0" max="200" value="100">
+                                    <span class="slider-value" id="contrastValue">100%</span>
+                                </div>
+                                <div class="filter-control">
+                                    <label for="brightnessSlider">Luminosità:</label>
+                                    <input type="range" id="brightnessSlider" min="0" max="200" value="100">
+                                    <span class="slider-value" id="brightnessValue">100%</span>
+                                </div>
+                                <div class="filter-control">
+                                    <label for="filterSelect">Filtro visivo:</label>
+                                    <select id="filterSelect">
+                                        <option value="normal">Normale</option>
+                                        <option value="blue">Filtro blu</option>
+                                        <option value="green">Filtro verde</option>
+                                        <option value="highContrast">Alto contrasto</option>
+                                        <option value="melanin">Melanina</option>
+                                        <option value="vascular">Strutture vascolari</option>
+                                        <option value="collagen">Collagene</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div class="filter-control">
-                                <label for="filterSelect">Filtro visivo:</label>
-                                <select id="filterSelect">
-                                    <option value="normal">Normale</option>
-                                    <option value="blue">Filtro blu</option>
-                                    <option value="green">Filtro verde</option>
-                                    <option value="highContrast">Alto contrasto</option>
-                                </select>
+                            <div id="advancedFilters" class="filter-panel">
+                                <div class="filter-control">
+                                    <label for="sharpnessSlider">Nitidezza:</label>
+                                    <input type="range" id="sharpnessSlider" min="0" max="100" value="0">
+                                    <span class="slider-value" id="sharpnessValue">0%</span>
+                                </div>
+                                <div class="filter-control">
+                                    <label for="saturationSlider">Saturazione:</label>
+                                    <input type="range" id="saturationSlider" min="0" max="200" value="100">
+                                    <span class="slider-value" id="saturationValue">100%</span>
+                                </div>
+                                <div class="filter-control">
+                                    <label for="algorithmSelect">Algoritmo bordi:</label>
+                                    <select id="algorithmSelect">
+                                        <option value="none">Nessuno</option>
+                                        <option value="sobel">Rilevamento bordi</option>
+                                        <option value="outline">Contorno lesione</option>
+                                    </select>
+                                </div>
                             </div>
+                            <button id="resetFilters" class="reset-button">Ripristina filtri</button>
                         </div>
                     </div>
                 </div>
 
                 <div class="diagnostic-tools">
                     <h3>Strumenti di valutazione</h3>
-                    <div class="criteria-container">
-                        <div class="criterion">
-                            <h4>Asimmetria</h4>
-                            <div class="rating">
-                                <input type="radio" id="asym0" name="asymmetry" value="0">
-                                <label for="asym0">0</label>
-                                <input type="radio" id="asym1" name="asymmetry" value="1">
-                                <label for="asym1">1</label>
-                                <input type="radio" id="asym2" name="asymmetry" value="2">
-                                <label for="asym2">2</label>
+                    <div class="evaluation-tabs">
+                        <button class="eval-tab active" data-tab="abcd">ABCD</button>
+                        <button class="eval-tab" data-tab="7point">7-Point Checklist</button>
+                        <button class="eval-tab" data-tab="menzies">Metodo di Menzies</button>
+                    </div>
+                    
+                    <div id="abcdCriteria" class="criteria-panel active">
+                        <div class="criteria-container">
+                            <div class="criterion">
+                                <h4>Asimmetria</h4>
+                                <div class="rating">
+                                    <input type="radio" id="asym0" name="asymmetry" value="0">
+                                    <label for="asym0">0</label>
+                                    <input type="radio" id="asym1" name="asymmetry" value="1">
+                                    <label for="asym1">1</label>
+                                    <input type="radio" id="asym2" name="asymmetry" value="2">
+                                    <label for="asym2">2</label>
+                                </div>
+                                <p class="criterion-description">0 = simmetrico, 1 = asimmetrico in un asse, 2 = asimmetrico in entrambi gli assi</p>
+                                <button class="help-btn" data-help="asymmetry">?</button>
                             </div>
-                            <p class="criterion-description">0 = simmetrico, 1 = asimmetrico in un asse, 2 = asimmetrico in entrambi gli assi</p>
-                        </div>
 
-                        <div class="criterion">
-                            <h4>Bordi</h4>
-                            <div class="rating">
-                                <input type="radio" id="border0" name="borders" value="0">
-                                <label for="border0">0</label>
-                                <input type="radio" id="border1" name="borders" value="1">
-                                <label for="border1">1</label>
-                                <input type="radio" id="border2" name="borders" value="2">
-                                <label for="border2">2</label>
+                            <div class="criterion">
+                                <h4>Bordi</h4>
+                                <div class="rating">
+                                    <input type="radio" id="border0" name="borders" value="0">
+                                    <label for="border0">0</label>
+                                    <input type="radio" id="border1" name="borders" value="1">
+                                    <label for="border1">1</label>
+                                    <input type="radio" id="border2" name="borders" value="2">
+                                    <label for="border2">2</label>
+                                </div>
+                                <p class="criterion-description">0 = regolari e netti, 1 = leggermente irregolari, 2 = molto irregolari</p>
+                                <button class="help-btn" data-help="borders">?</button>
                             </div>
-                            <p class="criterion-description">0 = regolari e netti, 1 = leggermente irregolari, 2 = molto irregolari</p>
-                        </div>
 
-                        <div class="criterion">
-                            <h4>Colore</h4>
-                            <div class="rating">
-                                <input type="radio" id="color0" name="colors" value="0">
-                                <label for="color0">0</label>
-                                <input type="radio" id="color1" name="colors" value="1">
-                                <label for="color1">1</label>
-                                <input type="radio" id="color2" name="colors" value="2">
-                                <label for="color2">2</label>
+                            <div class="criterion">
+                                <h4>Colore</h4>
+                                <div class="rating">
+                                    <input type="radio" id="color0" name="colors" value="0">
+                                    <label for="color0">0</label>
+                                    <input type="radio" id="color1" name="colors" value="1">
+                                    <label for="color1">1</label>
+                                    <input type="radio" id="color2" name="colors" value="2">
+                                    <label for="color2">2</label>
+                                </div>
+                                <p class="criterion-description">0 = colore omogeneo, 1 = 2-3 colori, 2 = 4+ colori o distribuzione irregolare</p>
+                                <button class="help-btn" data-help="colors">?</button>
                             </div>
-                            <p class="criterion-description">0 = colore omogeneo, 1 = 2-3 colori, 2 = 4+ colori o distribuzione irregolare</p>
-                        </div>
 
-                        <div class="criterion">
-                            <h4>Strutture dermoscopiche</h4>
-                            <div class="structure-checklist">
-                                <div class="structure-item">
-                                    <input type="checkbox" id="network" name="structures" value="network">
-                                    <label for="network">Rete pigmentata</label>
+                            <div class="criterion">
+                                <h4>Diametro</h4>
+                                <div class="rating">
+                                    <input type="radio" id="diameter0" name="diameter" value="0">
+                                    <label for="diameter0">0</label>
+                                    <input type="radio" id="diameter1" name="diameter" value="1">
+                                    <label for="diameter1">1</label>
                                 </div>
-                                <div class="structure-item">
-                                    <input type="checkbox" id="globules" name="structures" value="globules">
-                                    <label for="globules">Globuli</label>
-                                </div>
-                                <div class="structure-item">
-                                    <input type="checkbox" id="streaks" name="structures" value="streaks">
-                                    <label for="streaks">Strie</label>
-                                </div>
-                                <div class="structure-item">
-                                    <input type="checkbox" id="blueVeil" name="structures" value="blueVeil">
-                                    <label for="blueVeil">Velo blu-biancastro</label>
-                                </div>
-                                <div class="structure-item">
-                                    <input type="checkbox" id="regression" name="structures" value="regression">
-                                    <label for="regression">Aree di regressione</label>
-                                </div>
-                                <div class="structure-item">
-                                    <input type="checkbox" id="vascular" name="structures" value="vascular">
-                                    <label for="vascular">Strutture vascolari atipiche</label>
-                                </div>
+                                <p class="criterion-description">0 = < 6mm, 1 = ≥ 6mm</p>
+                                <button class="help-btn" data-help="diameter">?</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="7pointCriteria" class="criteria-panel">
+                        <div class="criteria-list">
+                            <h4>Criteri maggiori (2 punti ciascuno)</h4>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="atyp_network" name="7point" value="atyp_network" data-points="2">
+                                <label for="atyp_network">Rete pigmentata atipica</label>
+                                <button class="help-btn" data-help="atyp_network">?</button>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="blue_whitish" name="7point" value="blue_whitish" data-points="2">
+                                <label for="blue_whitish">Velo blu-biancastro</label>
+                                <button class="help-btn" data-help="blue_whitish">?</button>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="atyp_vascular" name="7point" value="atyp_vascular" data-points="2">
+                                <label for="atyp_vascular">Pattern vascolare atipico</label>
+                                <button class="help-btn" data-help="atyp_vascular">?</button>
+                            </div>
+                            
+                            <h4>Criteri minori (1 punto ciascuno)</h4>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="irreg_streaks" name="7point" value="irreg_streaks" data-points="1">
+                                <label for="irreg_streaks">Strie irregolari</label>
+                                <button class="help-btn" data-help="irreg_streaks">?</button>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="irreg_pigment" name="7point" value="irreg_pigment" data-points="1">
+                                <label for="irreg_pigment">Pigmentazione irregolare</label>
+                                <button class="help-btn" data-help="irreg_pigment">?</button>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="irreg_dots" name="7point" value="irreg_dots" data-points="1">
+                                <label for="irreg_dots">Punti/globuli irregolari</label>
+                                <button class="help-btn" data-help="irreg_dots">?</button>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="regression" name="7point" value="regression" data-points="1">
+                                <label for="regression">Aree di regressione</label>
+                                <button class="help-btn" data-help="regression">?</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="menziesCriteria" class="criteria-panel">
+                        <div class="criteria-list">
+                            <h4>Criteri negativi (nessuno deve essere presente)</h4>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="symmetry" name="menzies_neg" value="symmetry">
+                                <label for="symmetry">Simmetria del pattern</label>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="single_color" name="menzies_neg" value="single_color">
+                                <label for="single_color">Colore singolo</label>
+                            </div>
+                            
+                            <h4>Criteri positivi (almeno uno deve essere presente)</h4>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="blue_white_veil" name="menzies_pos" value="blue_white_veil">
+                                <label for="blue_white_veil">Velo blu-biancastro</label>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="multiple_brown_dots" name="menzies_pos" value="multiple_brown_dots">
+                                <label for="multiple_brown_dots">Multipli punti marroni</label>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="pseudopods" name="menzies_pos" value="pseudopods">
+                                <label for="pseudopods">Pseudopodi</label>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="radial_streaming" name="menzies_pos" value="radial_streaming">
+                                <label for="radial_streaming">Striature radiali</label>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="scar_depigment" name="menzies_pos" value="scar_depigment">
+                                <label for="scar_depigment">Depigmentazione tipo cicatrice</label>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="peripheral_black_dots" name="menzies_pos" value="peripheral_black_dots">
+                                <label for="peripheral_black_dots">Punti/globuli neri periferici</label>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="multiple_colors" name="menzies_pos" value="multiple_colors">
+                                <label for="multiple_colors">Colori multipli (5-6)</label>
+                            </div>
+                            <div class="checklist-item">
+                                <input type="checkbox" id="multiple_blue_gray_dots" name="menzies_pos" value="multiple_blue_gray_dots">
+                                <label for="multiple_blue_gray_dots">Multipli punti blu/grigi</label>
                             </div>
                         </div>
                     </div>
 
-                    <button id="evaluateBtn" class="evaluate-button">Valuta</button>
+                    <div class="additional-structures">
+                        <h4>Strutture dermoscopiche aggiuntive</h4>
+                        <div class="structure-checklist">
+                            <div class="structure-item">
+                                <input type="checkbox" id="network" name="structures" value="network">
+                                <label for="network">Rete pigmentata tipica</label>
+                            </div>
+                            <div class="structure-item">
+                                <input type="checkbox" id="globules" name="structures" value="globules">
+                                <label for="globules">Globuli regolari</label>
+                            </div>
+                            <div class="structure-item">
+                                <input type="checkbox" id="comma" name="structures" value="comma">
+                                <label for="comma">Vasi a virgola</label>
+                            </div>
+                            <div class="structure-item">
+                                <input type="checkbox" id="blotches" name="structures" value="blotches">
+                                <label for="blotches">Blotches</label>
+                            </div>
+                            <div class="structure-item">
+                                <input type="checkbox" id="homogeneous" name="structures" value="homogeneous">
+                                <label for="homogeneous">Area omogenea</label>
+                            </div>
+                            <div class="structure-item">
+                                <input type="checkbox" id="crystals" name="structures" value="crystals">
+                                <label for="crystals">Strutture cristalline</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="buttons-container">
+                        <button id="evaluateBtn" class="evaluate-button">Valuta</button>
+                        <button id="resetEvalBtn" class="reset-button">Reimposta valutazione</button>
+                    </div>
+                    
+                    <div id="helpDialog" class="help-dialog hidden">
+                        <div class="help-content">
+                            <h4 id="helpTitle">Titolo dell'aiuto</h4>
+                            <div id="helpText">Testo dell'aiuto</div>
+                            <div id="helpImage" class="help-image"></div>
+                            <button id="closeHelp" class="close-button">Chiudi</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="results" class="results-section hidden">
                     <h3>Risultati dell'analisi</h3>
                     <div id="resultsContent"></div>
+                    <div class="result-actions">
+                        <button id="saveReportBtn" class="action-button">Salva report</button>
+                        <button id="printReportBtn" class="action-button">Stampa</button>
+                    </div>
                     <div class="disclaimer-box">
                         <p><strong>IMPORTANTE:</strong> Questa analisi è puramente indicativa e a scopo educativo. 
                         Si raccomanda di consultare sempre un dermatologo per una diagnosi accurata.</p>
+                        <p><strong>ATTENZIONE MEDICA:</strong> Lesioni sospette devono essere valutate di persona da un dermatologo.</p>
                     </div>
+                </div>
+            </section>
+            
+            <section id="historySection" class="history-section hidden">
+                <h3>Analisi recenti</h3>
+                <div id="historyContainer" class="history-container">
+                    <p class="no-history">Nessuna analisi salvata</p>
                 </div>
             </section>
         </main>
 
         <footer>
             <p>© 2025 - Strumento educativo per l'analisi dermoscopica</p>
+            <p class="disclaimer-footer">Questo strumento non memorizza o trasmette alcuna immagine o dato personale. Tutte le elaborazioni avvengono localmente nel browser.</p>
         </footer>
+    </div>
+    
+    <div id="infoModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="modalTitle">Titolo</h3>
+            <div id="modalContent">Contenuto</div>
+        </div>
     </div>
 
     <script src="script.js"></script>
