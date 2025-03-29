@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisi Dermoscopica</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Analisi Dermoscopica di Lesioni Cutanee</h1>
+            <p class="disclaimer">ATTENZIONE: Questo strumento è solo a scopo educativo. 
+            Non sostituisce una diagnosi medica professionale. Consultare sempre un dermatologo qualificato.</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <h2>Carica l'immagine della lesione</h2>
+                <div class="upload-container">
+                    <input type="file" id="imageUpload" accept="image/*">
+                    <label for="imageUpload" class="upload-button">Seleziona immagine</label>
+                </div>
+            </section>
+
+            <section class="analysis-section">
+                <div class="image-container">
+                    <div class="original-image">
+                        <h3>Immagine originale</h3>
+                        <div id="originalImageContainer">
+                            <p class="placeholder-text">L'immagine apparirà qui</p>
+                        </div>
+                    </div>
+                    <div class="processed-image">
+                        <h3>Immagine elaborata</h3>
+                        <div id="processedImageContainer">
+                            <p class="placeholder-text">L'immagine elaborata apparirà qui</p>
+                        </div>
+                        <div class="filter-controls">
+                            <div class="filter-control">
+                                <label for="contrastSlider">Contrasto:</label>
+                                <input type="range" id="contrastSlider" min="0" max="200" value="100">
+                            </div>
+                            <div class="filter-control">
+                                <label for="brightnessSlider">Luminosità:</label>
+                                <input type="range" id="brightnessSlider" min="0" max="200" value="100">
+                            </div>
+                            <div class="filter-control">
+                                <label for="filterSelect">Filtro visivo:</label>
+                                <select id="filterSelect">
+                                    <option value="normal">Normale</option>
+                                    <option value="blue">Filtro blu</option>
+                                    <option value="green">Filtro verde</option>
+                                    <option value="highContrast">Alto contrasto</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="diagnostic-tools">
+                    <h3>Strumenti di valutazione</h3>
+                    <div class="criteria-container">
+                        <div class="criterion">
+                            <h4>Asimmetria</h4>
+                            <div class="rating">
+                                <input type="radio" id="asym0" name="asymmetry" value="0">
+                                <label for="asym0">0</label>
+                                <input type="radio" id="asym1" name="asymmetry" value="1">
+                                <label for="asym1">1</label>
+                                <input type="radio" id="asym2" name="asymmetry" value="2">
+                                <label for="asym2">2</label>
+                            </div>
+                            <p class="criterion-description">0 = simmetrico, 1 = asimmetrico in un asse, 2 = asimmetrico in entrambi gli assi</p>
+                        </div>
+
+                        <div class="criterion">
+                            <h4>Bordi</h4>
+                            <div class="rating">
+                                <input type="radio" id="border0" name="borders" value="0">
+                                <label for="border0">0</label>
+                                <input type="radio" id="border1" name="borders" value="1">
+                                <label for="border1">1</label>
+                                <input type="radio" id="border2" name="borders" value="2">
+                                <label for="border2">2</label>
+                            </div>
+                            <p class="criterion-description">0 = regolari e netti, 1 = leggermente irregolari, 2 = molto irregolari</p>
+                        </div>
+
+                        <div class="criterion">
+                            <h4>Colore</h4>
+                            <div class="rating">
+                                <input type="radio" id="color0" name="colors" value="0">
+                                <label for="color0">0</label>
+                                <input type="radio" id="color1" name="colors" value="1">
+                                <label for="color1">1</label>
+                                <input type="radio" id="color2" name="colors" value="2">
+                                <label for="color2">2</label>
+                            </div>
+                            <p class="criterion-description">0 = colore omogeneo, 1 = 2-3 colori, 2 = 4+ colori o distribuzione irregolare</p>
+                        </div>
+
+                        <div class="criterion">
+                            <h4>Strutture dermoscopiche</h4>
+                            <div class="structure-checklist">
+                                <div class="structure-item">
+                                    <input type="checkbox" id="network" name="structures" value="network">
+                                    <label for="network">Rete pigmentata</label>
+                                </div>
+                                <div class="structure-item">
+                                    <input type="checkbox" id="globules" name="structures" value="globules">
+                                    <label for="globules">Globuli</label>
+                                </div>
+                                <div class="structure-item">
+                                    <input type="checkbox" id="streaks" name="structures" value="streaks">
+                                    <label for="streaks">Strie</label>
+                                </div>
+                                <div class="structure-item">
+                                    <input type="checkbox" id="blueVeil" name="structures" value="blueVeil">
+                                    <label for="blueVeil">Velo blu-biancastro</label>
+                                </div>
+                                <div class="structure-item">
+                                    <input type="checkbox" id="regression" name="structures" value="regression">
+                                    <label for="regression">Aree di regressione</label>
+                                </div>
+                                <div class="structure-item">
+                                    <input type="checkbox" id="vascular" name="structures" value="vascular">
+                                    <label for="vascular">Strutture vascolari atipiche</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button id="evaluateBtn" class="evaluate-button">Valuta</button>
+                </div>
+
+                <div id="results" class="results-section hidden">
+                    <h3>Risultati dell'analisi</h3>
+                    <div id="resultsContent"></div>
+                    <div class="disclaimer-box">
+                        <p><strong>IMPORTANTE:</strong> Questa analisi è puramente indicativa e a scopo educativo. 
+                        Si raccomanda di consultare sempre un dermatologo per una diagnosi accurata.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>© 2025 - Strumento educativo per l'analisi dermoscopica</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
